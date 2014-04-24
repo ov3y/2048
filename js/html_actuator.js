@@ -1,4 +1,4 @@
-function HTMLActuator() {
+﻿function HTMLActuator() {
   this.tileContainer    = document.getElementsByClassName("tile-container")[0];
   this.scoreContainer   = document.getElementsByClassName("score-container")[0];
   this.messageContainer = document.getElementsByClassName("game-message")[0];
@@ -107,7 +107,7 @@ HTMLActuator.prototype.updateScore = function (score) {
 
 HTMLActuator.prototype.message = function (won) {
   var type    = won ? "game-won" : "game-over";
-  var message = won ? "You win!" : "Game over!"
+  var message = won ? "Wygrana!" : "Przegrana!"
 
   // if (ga) ga("send", "event", "game", "end", type, this.score);
 
@@ -130,8 +130,8 @@ HTMLActuator.prototype.scoreTweetButton = function () {
   tweet.setAttribute("data-via", "gabrielecirulli");
   tweet.textContent = "Tweet";
 
-  var text = "I scored " + this.score + " points at 2048, a game where you " +
-             "join numbers to score high! #2048game #2048ai";
+  var text = "Uzyskalem wynik " + this.score + " w grze 2048, w ktorej " +
+             "laczysz numery aby uzyskac wysoki wynik! #2048game #2048ai";
   tweet.setAttribute("data-text", text);
 
   return tweet;
