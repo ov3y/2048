@@ -1,10 +1,7 @@
-function Grid(size) {
+function Grid(size, previousState) {
   this.size = size;
   this.startTiles   = 2;
-
-  this.cells = [];
-
-  this.build();
+  this.cells = previousState ? this.fromState(previousState) : this.empty();
   this.playerTurn = true;
 }
 
@@ -18,16 +15,34 @@ for (var x=0; x<4; x++) {
 }
 
 // Build a grid of the specified size
-Grid.prototype.build = function () {
+Grid.prototype.empty = function () {
+  var cells = [];
+
   for (var x = 0; x < this.size; x++) {
-    var row = this.cells[x] = [];
+    var row = cells[x] = [];
 
     for (var y = 0; y < this.size; y++) {
       row.push(null);
     }
   }
+
+  return cells;
 };
 
+Grid.prototype.fromState = function (state) {
+  var cells = [];
+
+  for (var x = 0; x < this.size; x++) {
+    var row = cells[x] = [];
+
+    for (var y = 0; y < this.size; y++) {
+      var tile = state[x][y];
+      row.push(tile ? new Tile(tile.position, tile.value) : null);
+    }
+  }
+
+  return cells;
+};
 
 // Find the first available random position
 Grid.prototype.randomAvailableCell = function () {
@@ -110,9 +125,26 @@ Grid.prototype.clone = function() {
   return newGrid;
 };
 
+Grid.prototype.serialize = function () {
+  var cellState = [];
+
+  for (var x = 0; x < this.size; x++) {
+    var row = cellState[x] = [];
+
+    for (var y = 0; y < this.size; y++) {
+      row.push(this.cells[x][y] ? this.cells[x][y].serialize() : null);
+    }
+  }
+
+  return {
+    size: this.size,
+    cells: cellState
+  };
+};
+
 // Set up the initial tiles to start the game with
 Grid.prototype.addStartTiles = function () {
-  for (var i=0; i<this.startTiles; i++) {
+  for (var i = 0; i < this.startTiles; i++) {
     this.addRandomTile();
   }
 };
@@ -121,7 +153,6 @@ Grid.prototype.addStartTiles = function () {
 Grid.prototype.addRandomTile = function () {
   if (this.cellsAvailable()) {
     var value = Math.random() < 0.9 ? 2 : 4;
-    //var value = Math.random() < 0.9 ? 256 : 512;
     var tile = new Tile(this.randomAvailableCell(), value);
 
     this.insertTile(tile);
@@ -145,24 +176,9 @@ Grid.prototype.moveTile = function (tile, cell) {
   tile.updatePosition(cell);
 };
 
-
-Grid.prototype.vectors = {
-  0: { x: 0,  y: -1 }, // up
-  1: { x: 1,  y: 0 },  // right
-  2: { x: 0,  y: 1 },  // down
-  3: { x: -1, y: 0 }   // left
-}
-
-// Get the vector representing the chosen direction
-Grid.prototype.getVector = function (direction) {
-  // Vectors representing tile movement
-  return this.vectors[direction];
-};
-
 // Move tiles on the grid in the specified direction
-// returns true if move was successful
 Grid.prototype.move = function (direction) {
-  // 0: up, 1: right, 2:down, 3: left
+  // 0: up, 1: right, 2: down, 3: left
   var self = this;
 
   var cell, tile;
@@ -179,7 +195,7 @@ Grid.prototype.move = function (direction) {
   // Traverse the grid in the right direction and move tiles
   traversals.x.forEach(function (x) {
     traversals.y.forEach(function (y) {
-      cell = self.indexes[x][y];
+      cell = { x: x, y: y };
       tile = self.cellContent(cell);
 
       if (tile) {
@@ -204,9 +220,7 @@ Grid.prototype.move = function (direction) {
           score += merged.value;
 
           // The mighty 2048 tile
-          if (merged.value === 2048) {
-            won = true;
-          }
+          if (merged.value === 2048) won = true;
         } else {
           //if (debug) {
             //console.log(cell);
@@ -232,6 +246,19 @@ Grid.prototype.move = function (direction) {
     //console.log(this.toString());
   //}
   return {moved: moved, score: score, won: won};
+};
+
+Grid.prototype.vectors = {
+  0: { x: 0,  y: -1 }, // up
+  1: { x: 1,  y: 0 },  // right
+  2: { x: 0,  y: 1 },  // down
+  3: { x: -1, y: 0 }   // left
+}
+
+// Get the vector representing the chosen direction
+Grid.prototype.getVector = function (direction) {
+  // Vectors representing tile movement
+  return this.vectors[direction];
 };
 
 Grid.prototype.computerMove = function() {
@@ -276,11 +303,8 @@ Grid.prototype.movesAvailable = function () {
 };
 
 // Check for available matches between tiles (more expensive check)
-// returns the number of matches
 Grid.prototype.tileMatchesAvailable = function () {
   var self = this;
-
-  //var matches = 0;
 
   var tile;
 
@@ -296,15 +320,14 @@ Grid.prototype.tileMatchesAvailable = function () {
           var other  = self.cellContent(cell);
 
           if (other && other.value === tile.value) {
-            return true; //matches++; // These two tiles can be merged
+            return true; // These two tiles can be merged
           }
         }
       }
     }
   }
 
-  //console.log(matches);
-  return false; //matches;
+  return false;
 };
 
 Grid.prototype.positionsEqual = function (first, second) {
@@ -326,7 +349,7 @@ Grid.prototype.toString = function() {
   return string;
 }
 
-// counts the number of isolated groups. 
+// counts the number of isolated groups.
 Grid.prototype.islands = function() {
   var self = this;
   var mark = function(x, y, value) {
@@ -335,7 +358,7 @@ Grid.prototype.islands = function() {
         self.cells[x][y].value == value &&
         !self.cells[x][y].marked ) {
       self.cells[x][y].marked = true;
-      
+
       for (direction in [0,1,2,3]) {
         var vector = self.getVector(direction);
         mark(x + vector.x, y + vector.y, value);
@@ -361,7 +384,7 @@ Grid.prototype.islands = function() {
       }
     }
   }
-  
+
   return islands;
 }
 
@@ -369,7 +392,7 @@ Grid.prototype.islands = function() {
 // measures how smooth the grid is (as if the values of the pieces
 // were interpreted as elevations). Sums of the pairwise difference
 // between neighboring tiles (in log space, so it represents the
-// number of merges that need to happen before they can merge). 
+// number of merges that need to happen before they can merge).
 // Note that the pieces can be distant
 Grid.prototype.smoothness = function() {
   var smoothness = 0;
@@ -438,7 +461,7 @@ Grid.prototype.monotonicity = function() {
             //console.log(cell, value, target, targetValue);
             increases += targetValue - value;
           }
-        } 
+        }
         if (!queued[target.x][target.y]) {
           cellQueue.push(target);
           queued[target.x][target.y] = true;
