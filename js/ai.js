@@ -3,7 +3,7 @@ function AI(grid) {
 }
 
 // static evaluation function
-AI.prototype.eval = function() {
+AI.prototype.eval = function(debug) {
   var emptyCells = this.grid.availableCells().length;
 
   var smoothWeight = 0.1,
@@ -11,14 +11,27 @@ AI.prototype.eval = function() {
       //islandWeight = 0.0,
       mono2Weight  = 1.0,
       emptyWeight  = 2.7,
-      maxWeight    = 1.0;
+      maxWeight    = 1.0,
+      smoothness = this.grid.smoothness(),
+      //monotonicity = this.grid.monotonicity(),
+      //islands = this.grid.islands(),
+      monotonicity2 = this.grid.monotonicity2(),
+      emptyCells = Math.log(emptyCells),
+      maxValue = this.grid.maxValue();
 
-  return this.grid.smoothness() * smoothWeight
-       //+ this.grid.monotonicity() * monoWeight
-       //- this.grid.islands() * islandWeight
-       + this.grid.monotonicity2() * mono2Weight
-       + Math.log(emptyCells) * emptyWeight
-       + this.grid.maxValue() * maxWeight;
+  if (debug) {
+    console.log("smoothness: " + smoothness
+        + "; monotonicity2: " + monotonicity2
+        + "; emptyCells: " + emptyCells
+        + "; maxValue: " + maxValue);
+  }
+
+  return smoothness * smoothWeight
+      //+ monotonicity * monoWeight
+      //- islands * islandWeight
+      + monotonicity2 * mono2Weight
+      + emptyCells * emptyWeight
+      + maxValue * maxWeight;
 };
 
 //AI.prototype.cache = {}
@@ -36,18 +49,18 @@ AI.prototype.search = function(depth, alpha, beta, positions, cutoffs) {
       var newGrid = this.grid.clone();
       if (newGrid.move(direction).moved) {
         positions++;
-        if (newGrid.isWin()) {
-          return { move: direction, score: 10000, positions: positions, cutoffs: cutoffs };
-        }
+        //if (newGrid.isWin()) {
+        //  return { move: direction, score: 10000, positions: positions, cutoffs: cutoffs };
+        //}
         var newAI = new AI(newGrid);
 
         if (depth == 0) {
           result = { move: direction, score: newAI.eval() };
         } else {
           result = newAI.search(depth-1, bestScore, beta, positions, cutoffs);
-          if (result.score > 9900) { // win
-            result.score--; // to slightly penalize higher depth from win
-          }
+          //if (result.score > 9900) { // win
+          //  result.score--; // to slightly penalize higher depth from win
+          //}
           positions = result.positions;
           cutoffs = result.cutoffs;
         }
@@ -224,6 +237,7 @@ AI.prototype.iterativeDeep = function() {
   //console.log('depth', --depth);
   //console.log(this.translate(best.move));
   //console.log(best);
+  //this.eval(true);
   return best
 }
 
