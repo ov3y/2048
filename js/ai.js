@@ -49,18 +49,18 @@ AI.prototype.search = function(depth, alpha, beta, positions, cutoffs) {
       var newGrid = this.grid.clone();
       if (newGrid.move(direction).moved) {
         positions++;
-        if (newGrid.isWin()) {
-          return { move: direction, score: 10000, positions: positions, cutoffs: cutoffs };
-        }
+        //if (newGrid.isWin()) {
+        //  return { move: direction, score: 10000, positions: positions, cutoffs: cutoffs };
+        //}
         var newAI = new AI(newGrid);
 
         if (depth == 0) {
           result = { move: direction, score: newAI.eval() };
         } else {
           result = newAI.search(depth-1, bestScore, beta, positions, cutoffs);
-          if (result.score > 9900) { // win
-            result.score--; // to slightly penalize higher depth from win
-          }
+          //if (result.score > 9900) { // win
+          //  result.score--; // to slightly penalize higher depth from win
+          //}
           positions = result.positions;
           cutoffs = result.cutoffs;
         }
