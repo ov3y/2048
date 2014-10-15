@@ -4,19 +4,15 @@
   overflow: auto;
 }
 
-.ai-button, #feedback-container {
-  font-size: xx-large;
-}
-
-#run-button-container {
+#run-button {
   float: right;
 }
 
-#hint-button-container, #feedback-container {
+#hint-button, #feedback {
   float: left;
 }
 
-#feedback-container {
+#feedback {
   margin-left: 1em;
   font-weight: bold;
 }

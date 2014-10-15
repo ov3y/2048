@@ -160,7 +160,7 @@ HTMLActuator.prototype.scoreTweetButton = function () {
 
 
 HTMLActuator.prototype.showHint = function(hint) {
-  document.getElementById('feedback-container').innerHTML = ['↑','→','↓','←'][hint];
+  document.getElementById('feedback').innerHTML = ['↑','→','↓','←'][hint];
 }
 
 HTMLActuator.prototype.setRunButton = function(message) {

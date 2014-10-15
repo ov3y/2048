@@ -58,7 +58,7 @@ KeyboardInputManager.prototype.listen = function () {
     if (!modifiers) {
       if (mapped !== undefined) {
         event.preventDefault();
-        var feedbackContainer  = document.getElementById('feedback-container');
+        var feedbackContainer  = document.getElementById('feedback');
         feedbackContainer.innerHTML = ' ';
         self.emit("move", mapped);
       }
@@ -78,7 +78,7 @@ KeyboardInputManager.prototype.listen = function () {
   var hintButton = document.getElementById('hint-button');
   hintButton.addEventListener('click', function(e) {
     e.preventDefault();
-    var feedbackContainer  = document.getElementById('feedback-container');
+    var feedbackContainer  = document.getElementById('feedback');
     feedbackContainer.innerHTML = '<img src=img/spinner.gif />';
     self.emit('think');
   });
