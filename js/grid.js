@@ -193,10 +193,12 @@ Grid.prototype.move = function (direction) {
   this.prepareTiles();
 
   // Traverse the grid in the right direction and move tiles
-  traversals.x.forEach(function (x) {
-    traversals.y.forEach(function (y) {
-      cell = { x: x, y: y };
-      tile = self.cellContent(cell);
+  for (var i=0; i<traversals.x.length; i++) {
+    var x = traversals.x[i];
+    for (var j=0; j<traversals.y.length; j++) {
+      var y = traversals.y[j];
+      var cell = self.indexes[x][y];
+      tile = self.cells[x][y];
 
       if (tile) {
         //if (debug) {
@@ -235,8 +237,8 @@ Grid.prototype.move = function (direction) {
           moved = true; // The tile moved from its original cell!
         }
       }
-    });
-  });
+    };
+  };
 
   //console.log('returning, playerturn is', self.playerTurn);
   //if (!moved) {
@@ -268,18 +270,19 @@ Grid.prototype.computerMove = function() {
 
 // Build a list of positions to traverse in the right order
 Grid.prototype.buildTraversals = function (vector) {
-  var traversals = { x: [], y: [] };
+  var travX = [], travY = [];
+
 
   for (var pos = 0; pos < this.size; pos++) {
-    traversals.x.push(pos);
-    traversals.y.push(pos);
+    travX.push(pos);
+    travY.push(pos);
   }
 
   // Always traverse from the farthest cell in the chosen direction
-  if (vector.x === 1) traversals.x = traversals.x.reverse();
-  if (vector.y === 1) traversals.y = traversals.y.reverse();
+  if (vector.x === 1) travX = travX.reverse();
+  if (vector.y === 1) travY = travY.reverse();
 
-  return traversals;
+  return { x: travX, y: travY };
 };
 
 Grid.prototype.findFarthestPosition = function (cell, vector) {
@@ -398,22 +401,23 @@ Grid.prototype.smoothness = function() {
   var smoothness = 0;
   for (var x=0; x<4; x++) {
     for (var y=0; y<4; y++) {
-      if ( this.cellOccupied( this.indexes[x][y] )) {
-        var value = Math.log(this.cellContent( this.indexes[x][y] ).value) / Math.log(2);
+      var tile = this.cells[x][y];
+      if (tile) {
+        var value = Math.log(tile.value);
         for (var direction=1; direction<=2; direction++) {
           var vector = this.getVector(direction);
           var targetCell = this.findFarthestPosition(this.indexes[x][y], vector).next;
-
-          if (this.cellOccupied(targetCell)) {
-            var target = this.cellContent(targetCell);
-            var targetValue = Math.log(target.value) / Math.log(2);
-            smoothness -= Math.abs(value - targetValue);
+          if (this.withinBounds(targetCell)) {
+            var target = this.cells[targetCell.x][targetCell.y];
+            if (target) {
+              smoothness -= Math.abs(value - Math.log(target.value));
+            }
           }
         }
       }
     }
   }
-  return smoothness;
+  return smoothness / Math.log(2);
 }
 
 Grid.prototype.monotonicity = function() {
@@ -496,16 +500,14 @@ Grid.prototype.monotonicity2 = function() {
     var current = 0;
     var next = current+1;
     while ( next<4 ) {
-      while ( next<4 && !this.cellOccupied( this.indexes[x][next] )) {
+      while ( next<4 && !this.cells[x][next] ) {
         next++;
       }
       if (next>=4) { next--; }
-      var currentValue = this.cellOccupied({x:x, y:current}) ?
-        Math.log(this.cellContent( this.indexes[x][current] ).value) / Math.log(2) :
-        0;
-      var nextValue = this.cellOccupied({x:x, y:next}) ?
-        Math.log(this.cellContent( this.indexes[x][next] ).value) / Math.log(2) :
-        0;
+      var currentCell = this.cells[x][current];
+      var currentValue = currentCell ? Math.log(currentCell.value) : 0;
+      var nextCell = this.cells[x][next];
+      var nextValue = nextCell ? Math.log(nextCell.value) : 0;
       if (currentValue > nextValue) {
         totals[0] += nextValue - currentValue;
       } else if (nextValue > currentValue) {
@@ -521,16 +523,14 @@ Grid.prototype.monotonicity2 = function() {
     var current = 0;
     var next = current+1;
     while ( next<4 ) {
-      while ( next<4 && !this.cellOccupied( this.indexes[next][y] )) {
+      while ( next<4 && !this.cells[next][y] ) {
         next++;
       }
       if (next>=4) { next--; }
-      var currentValue = this.cellOccupied({x:current, y:y}) ?
-        Math.log(this.cellContent( this.indexes[current][y] ).value) / Math.log(2) :
-        0;
-      var nextValue = this.cellOccupied({x:next, y:y}) ?
-        Math.log(this.cellContent( this.indexes[next][y] ).value) / Math.log(2) :
-        0;
+      var currentCell = this.cells[current][y];
+      var currentValue = currentCell ? Math.log(currentCell.value) : 0;
+      var nextCell = this.cells[next][y];
+      var nextValue = nextCell ? Math.log(nextCell.value) : 0;
       if (currentValue > nextValue) {
         totals[2] += nextValue - currentValue;
       } else if (nextValue > currentValue) {
@@ -541,7 +541,7 @@ Grid.prototype.monotonicity2 = function() {
     }
   }
 
-  return Math.max(totals[0], totals[1]) + Math.max(totals[2], totals[3]);
+  return (Math.max(totals[0], totals[1]) + Math.max(totals[2], totals[3])) / Math.log(2);
 }
 
 Grid.prototype.maxValue = function() {
